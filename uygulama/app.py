@@ -1,5 +1,5 @@
 import bcrypt
-from rezervasyon_veri import rezervasyon_yap
+from rezervasyon_veri import rezervasyon_yap, rezervasyonlari_getir, rezervasyon_iptal
 from mysql.connector import Error 
 from menu_veri import gunluk_menuleri_getir, haftalik_menuleri_getir, menu_doluluk_getir
 from datetime import date, datetime, timedelta
@@ -7,7 +7,8 @@ from decimal import Decimal
 from flask import Flask, jsonify, request
 from kullanici_veri import kullanici_bul
 from oturum import oturum_olustur, oturum_bul, oturum_sil
-from bakiye_veri import bakiye_yukle
+from bakiye_veri import bakiye_yukle, bakiye_bilgilerini_getir
+from degerlendirme_veri import degerlendirme_ekle
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
@@ -265,6 +266,154 @@ def bakiye_yukleme():
 
         app.logger.exception("Bakiye yükleme hatası")
         return jsonify({"hata": "Bakiye yüklenirken bir hata oluştu."}), 500   
+
+@app.route("/api/rezervasyonlar", methods=["GET"])
+def rezervasyonlari_listele():
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+
+    if not token:
+        return jsonify({"hata": "Oturum açmanız gerekiyor."}), 401
+
+    kullanici = oturum_bul(token)
+
+    if kullanici is None:
+        return jsonify({"hata": "Oturum süresi dolmuş veya geçersiz."}), 401
+
+    satirlar = rezervasyonlari_getir(kullanici["id"])
+
+    rezervasyonlar = []
+
+    for satir in satirlar:
+        rezervasyonlar.append({
+            "id": satir["id"],
+            "menu_id": satir["menu_id"],
+            "durum": satir["durum"],
+            "ucret": float(satir["ucret"]),
+            "olusturma": str(satir["olusturma"]),
+            "kullanma_zamani": str(satir["kullanma_zamani"]) if satir["kullanma_zamani"] else None,
+            "iptal_zamani": str(satir["iptal_zamani"]) if satir["iptal_zamani"] else None,
+            "tarih": str(satir["tarih"]),
+            "yemekhane": satir["yemekhane"],
+            "ogun": satir["ogun"]
+        })
+
+    return jsonify({"rezervasyonlar": rezervasyonlar})
+
+@app.route("/api/rezervasyon/iptal", methods=["POST"])
+def rezervasyon_iptal_et():
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+
+    if not token:
+        return jsonify({"hata": "Oturum açmanız gerekiyor."}), 401
+
+    kullanici = oturum_bul(token)
+
+    if kullanici is None:
+        return jsonify({"hata": "Oturum süresi dolmuş veya geçersiz."}), 401
+
+    veri = request.get_json(silent=True) or {}
+    rezervasyon_id = veri.get("rezervasyon_id")
+
+    if type(rezervasyon_id) is not int or rezervasyon_id <= 0:
+        return jsonify({"hata": "Geçerli bir rezervasyon numarası giriniz."}), 400
+
+    try:
+        sonuc = rezervasyon_iptal(kullanici["id"], rezervasyon_id)
+
+        if sonuc is None:
+            return jsonify({"hata": "İptal sonucu alınamadı."}), 500
+
+        return jsonify({
+            "mesaj": "Rezervasyon iptal edildi.",
+            "sonuc": sonuc
+        })
+
+    except Error as hata:
+        if hata.sqlstate == "45000":
+            return jsonify({"hata": hata.msg}), 400
+
+        app.logger.exception("Rezervasyon iptal hatası")
+        return jsonify({"hata": "Rezervasyon iptal edilirken bir hata oluştu."}), 500
+
+@app.route("/api/bakiye", methods=["GET"])
+def bakiye_bilgileri():
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+
+    if not token:
+        return jsonify({"hata": "Oturum açmanız gerekiyor."}), 401
+
+    kullanici = oturum_bul(token)
+
+    if kullanici is None:
+        return jsonify({"hata": "Oturum süresi dolmuş veya geçersiz."}), 401
+
+    bilgi, satirlar = bakiye_bilgilerini_getir(kullanici["id"])
+
+    if bilgi is None:
+        return jsonify({"hata": "Kullanıcı bulunamadı."}), 404
+
+    hareketler = []
+
+    for satir in satirlar:
+        hareketler.append({
+            "id": satir["id"],
+            "tur": satir["tur"],
+            "tutar": float(satir["tutar"]),
+            "rezervasyon_id": satir["rezervasyon_id"],
+            "aciklama": satir["aciklama"],
+            "olusturma": str(satir["olusturma"])
+        })
+
+    return jsonify({
+        "bakiye": float(bilgi["bakiye"]),
+        "hareketler": hareketler
+    })
+
+@app.route("/api/degerlendirme/ekle", methods=["POST"])
+def degerlendirme_olustur():
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+
+    if not token:
+        return jsonify({"hata": "Oturum açmanız gerekiyor."}), 401
+
+    kullanici = oturum_bul(token)
+
+    if kullanici is None:
+        return jsonify({"hata": "Oturum süresi dolmuş veya geçersiz."}), 401
+
+    veri = request.get_json(silent=True) or {}
+
+    menu_id = veri.get("menu_id")
+    puan = veri.get("puan")
+    yorum = veri.get("yorum", "")
+
+    if type(menu_id) is not int or menu_id <= 0:
+        return jsonify({"hata": "Geçerli bir menü numarası giriniz."}), 400
+
+    if type(puan) is not int or not (1 <= puan <= 5):
+        return jsonify({"hata": "Puan 1 ile 5 arasında olmalıdır."}), 400
+
+    if not isinstance(yorum, str) or len(yorum) > 500:
+        return jsonify({"hata": "Yorum en fazla 500 karakter olabilir."}), 400
+
+    try:
+        sonuc = degerlendirme_ekle(kullanici["id"], menu_id, puan, yorum)
+
+        if sonuc == "kullanilmadi":
+            return jsonify({
+                "hata": "Yalnızca kullandığınız rezervasyonları değerlendirebilirsiniz."
+            }), 400
+
+        if sonuc == "zaten_var":
+            return jsonify({
+                "hata": "Bu menüyü daha önce değerlendirdiniz."
+            }), 400
+
+        return jsonify({"mesaj": "Değerlendirme başarıyla kaydedildi."}), 201
+
+    except Error:
+        app.logger.exception("Değerlendirme hatası")
+        return jsonify({"hata": "Değerlendirme kaydedilemedi."}), 500
 
     
 if __name__ == "__main__":

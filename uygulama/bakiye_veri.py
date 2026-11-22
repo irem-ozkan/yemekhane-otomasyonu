@@ -28,3 +28,35 @@ def bakiye_yukle(kullanici_id, tutar):
         if imlec is not None:
             imlec.close()
         db.close()
+
+def bakiye_bilgilerini_getir(kullanici_id):
+    db = baglanti("okuma")
+    imlec = None
+
+    try:
+        imlec = db.cursor(dictionary=True)
+
+        imlec.execute("""
+            SELECT id, bakiye
+            FROM kullanicilar
+            WHERE id = %s
+        """, (kullanici_id,))
+
+        kullanici = imlec.fetchone()
+
+        imlec.execute("""
+            SELECT id, tur, tutar, rezervasyon_id,
+                   aciklama, olusturma
+            FROM bakiye_hareketleri
+            WHERE kullanici_id = %s
+            ORDER BY olusturma DESC
+        """, (kullanici_id,))
+
+        hareketler = imlec.fetchall()
+
+        return kullanici, hareketler
+
+    finally:
+        if imlec is not None:
+            imlec.close()
+        db.close() 
