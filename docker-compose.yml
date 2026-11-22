@@ -1,3 +1,4 @@
+
 # =====================================================================
 # Yemekhane Otomasyonu · Başlangıç paketi
 # Çalıştırma:   docker compose up -d
@@ -11,8 +12,6 @@ x-mysql-ortak: &mysql-ortak
   image: mysql:8.4
   restart: unless-stopped
   healthcheck:
-    # 127.0.0.1 bilerek kullanılır: ilk kurulum sırasında sunucu yalnızca
-    # soket üzerinden açıktır, TCP yanıt vermeye başladığında kurulum bitmiştir.
     test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
     interval: 5s
     timeout: 5s
@@ -20,8 +19,6 @@ x-mysql-ortak: &mysql-ortak
     start_period: 60s
 
 # Uygulama servisinin alacağı ortam değişkenleri.
-# Container'lar birbirine servis adıyla ve İÇ portla (3306, 6379) bağlanır.
-# 3307 / 3308 yalnızca kendi bilgisayarınızdan (DBeaver, Workbench) bağlanmak içindir.
 x-uygulama-ortam: &uygulama-ortam
   TZ: Europe/Istanbul
   DB_YAZMA_HOST: mysql-primary
@@ -35,9 +32,7 @@ x-uygulama-ortam: &uygulama-ortam
 
 services:
 
-  # ---------------------------------------------------------------
-  # Kaynak (yazma) veritabanı · şema ve örnek veri ilk açılışta yüklenir
-  # ---------------------------------------------------------------
+  # Kaynak (yazma) veritabanı
   mysql-primary:
     <<: *mysql-ortak
     command: [--server-id=1, --gtid-mode=ON, --enforce-gtid-consistency=ON, --log-bin=mysql-bin,
@@ -55,9 +50,7 @@ services:
       - ./db/init:/docker-entrypoint-initdb.d:ro
       - mysql-primary-veri:/var/lib/mysql
 
-  # ---------------------------------------------------------------
-  # Replika (okuma) veritabanı · veriyi replica-setup ile kaynaktan alır
-  # ---------------------------------------------------------------
+  # Replika (okuma) veritabanı
   mysql-replica:
     <<: *mysql-ortak
     command: [--server-id=2, --gtid-mode=ON, --enforce-gtid-consistency=ON, --log-bin=mysql-bin,
@@ -71,10 +64,7 @@ services:
     volumes:
       - mysql-replica-veri:/var/lib/mysql
 
-  # ---------------------------------------------------------------
-  # Replikayı bir kez kurar, salt okunur yapar ve çıkar (exit 0).
-  # Replika zaten kuruluysa hiçbir şey yapmadan çıkar.
-  # ---------------------------------------------------------------
+  # Replikasyon kurulumu
   replica-setup:
     image: mysql:8.4
     entrypoint: ["bash", "/replica-setup.sh"]
@@ -94,9 +84,7 @@ services:
       mysql-replica:
         condition: service_healthy
 
-  # ---------------------------------------------------------------
-  # Redis · menü önbelleği ve oturum deposu (AOF açık, yeniden başlatmada veri kalır)
-  # ---------------------------------------------------------------
+  # Redis
   redis:
     image: redis:7.4-alpine
     restart: unless-stopped
@@ -111,16 +99,12 @@ services:
       timeout: 3s
       retries: 10
 
-  # ---------------------------------------------------------------
-  # Apache 2.4 · HTML/CSS'i sunar, uygulama isteklerini uygulama servisine iletir.
-  # Mod seçimi: aşağıdaki "-D WEBAPI" değerini MVC yolunu seçtiyseniz "-D MVC" yapın.
-  # ---------------------------------------------------------------
+  # Apache
   frontend:
     build: ./apache
     restart: unless-stopped
     command: ["httpd-foreground", "-D", "WEBAPI"]
     environment:
-      # Uygulamanızın container içinde dinlediği adres. Port farklıysa burayı değiştirin.
       UYGULAMA_ADRES: http://uygulama:8000
     ports:
       - "8080:80"
@@ -132,24 +116,19 @@ services:
       timeout: 3s
       retries: 5
 
-  # ---------------------------------------------------------------
-  # UYGULAMA · BU SERVİSİ SİZ YAZACAKSINIZ (Aşama 2)
-  # 1. ./uygulama klasörüne kodunuzu ve Dockerfile'ı koyun.
-  # 2. Uygulama container içinde 8000 portunu dinlesin (ya da UYGULAMA_ADRES'i değiştirin).
-  # 3. Aşağıdaki satırların başındaki "# " işaretlerini kaldırın.
-  # ---------------------------------------------------------------
-  # uygulama:
-  #   build: ./uygulama
-  #   restart: unless-stopped
-  #   environment:
-  #     <<: *uygulama-ortam
-  #   depends_on:
-  #     mysql-primary:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #     replica-setup:
-  #       condition: service_completed_successfully
+  # Python Flask uygulamamız
+  uygulama:
+    build: ./uygulama
+    restart: unless-stopped
+    environment:
+      <<: *uygulama-ortam
+    depends_on:
+      mysql-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      replica-setup:
+        condition: service_completed_successfully
 
 volumes:
   mysql-primary-veri:
