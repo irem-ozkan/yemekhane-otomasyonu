@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Haftalık Menü ve Rezervasyon | Yemekhane Otomasyonu</title>
+
+    <link rel="stylesheet" href="/css/temel.css">
+    <script src="/js/uygulama.js" defer></script>
+</head>
+
+<body data-sayfa="haftalik">
+
+    <header>
+        <div class="kapsayici ust">
+
+            <strong>🍽 Yemekhane Otomasyonu</strong>
+
+            <span id="oturumBilgi"></span>
+
+            <button id="cikis" class="dugme ikincil" hidden>
+                Çıkış
+            </button>
+
+        </div>
+    </header>
+
+    <nav class="kapsayici" aria-label="Ana menü">
+
+        <a href="/index.html">Giriş</a>
+        <a href="/gunluk-menu.html">Günlük Menü</a>
+        <a href="/haftalik-menu.html">Haftalık Menü ve Rezervasyon</a>
+        <a href="/rezervasyonlar.html">Rezervasyonlarım</a>
+        <a href="/bakiye.html">Bakiye İşlemleri</a>
+        <a href="/degerlendirme.html">Değerlendirme</a>
+        <a href="/yonetici.html" data-yonetici>Yönetici Paneli</a>
+
+    </nav>
+
+    <main class="kapsayici">
+
+        <h1>Haftalık Menü ve Rezervasyon</h1>
+
+        <p id="bildirim" role="status" aria-live="polite"></p>
+
+        <!-- TARİH SEÇİMİ -->
+        <label>
+            Hafta içinden bir tarih
+            <input id="tarih" type="date">
+        </label>
+
+        <button class="dugme" id="haftalikGetir">
+            Haftalık Menüyü Göster
+        </button>
+
+        <!-- YEMEKHANE VE ÖĞÜN FİLTRELERİ -->
+        <div class="filtreler">
+
+            <label>
+                Yemekhane
+
+                <select id="yemekhaneFiltre">
+                    <option value="">Tümü</option>
+                </select>
+            </label>
+
+            <label>
+                Öğün
+
+                <select id="ogunFiltre">
+                    <option value="">Tümü</option>
+                </select>
+            </label>
+
+        </div>
+
+        <!-- HAFTALIK MENÜ VE REZERVASYON KARTLARI -->
+        <div id="icerik" class="kartlar"></div>
+
+    </main>
+
+    <footer class="kapsayici">
+        Yemekhane Otomasyonu · Web Teknolojileri
+    </footer>
+
+</body>
+
+</html>

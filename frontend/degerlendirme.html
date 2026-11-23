@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Değerlendirme | Yemekhane Otomasyonu</title>
+
+    <link rel="stylesheet" href="/css/temel.css">
+    <script src="/js/uygulama.js" defer></script>
+</head>
+
+<body data-sayfa="degerlendirme">
+
+    <header>
+        <div class="kapsayici ust">
+
+            <strong>🍽 Yemekhane Otomasyonu</strong>
+
+            <span id="oturumBilgi"></span>
+
+            <button id="cikis" class="dugme ikincil" hidden>
+                Çıkış
+            </button>
+
+        </div>
+    </header>
+
+    <nav class="kapsayici" aria-label="Ana menü">
+
+        <a href="/index.html">Giriş</a>
+        <a href="/gunluk-menu.html">Günlük Menü</a>
+        <a href="/haftalik-menu.html">Haftalık Menü ve Rezervasyon</a>
+        <a href="/rezervasyonlar.html">Rezervasyonlarım</a>
+        <a href="/bakiye.html">Bakiye İşlemleri</a>
+        <a href="/degerlendirme.html">Değerlendirme</a>
+        <a href="/yonetici.html" data-yonetici>Yönetici Paneli</a>
+
+    </nav>
+
+    <main class="kapsayici">
+
+        <h1>Değerlendirme</h1>
+
+        <p id="bildirim" role="status" aria-live="polite"></p>
+
+        <p>Yalnızca kullanılmış rezervasyonlar değerlendirilebilir.</p>
+
+        <!-- DEĞERLENDİRME FORMU -->
+        <form id="puanForm">
+
+            <label>
+                Kullanılmış menü
+
+                <select name="menu_id" id="degerMenu" required>
+                    <option value="">Menü seçiniz</option>
+                </select>
+            </label>
+
+            <label>
+                Puan
+
+                <select name="puan">
+                    <option value="5">5 - Çok iyi</option>
+                    <option value="4">4 - İyi</option>
+                    <option value="3">3 - Orta</option>
+                    <option value="2">2 - Kötü</option>
+                    <option value="1">1 - Çok kötü</option>
+                </select>
+            </label>
+
+            <label>
+                Yorum
+
+                <textarea name="yorum" maxlength="500"></textarea>
+            </label>
+
+            <button class="dugme">
+                Değerlendirmeyi Kaydet
+            </button>
+
+        </form>
+
+        <!-- KULLANILMIŞ REZERVASYONLAR -->
+        <h2>Kullanılmış Rezervasyonlarım</h2>
+
+        <div id="icerik"></div>
+
+    </main>
+
+    <footer class="kapsayici">
+        Yemekhane Otomasyonu · Web Teknolojileri
+    </footer>
+
+</body>
+
+</html>

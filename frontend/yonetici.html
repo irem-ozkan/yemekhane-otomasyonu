@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Yönetici Paneli | Yemekhane Otomasyonu</title>
+
+    <link rel="stylesheet" href="/css/temel.css">
+    <script src="/js/uygulama.js" defer></script>
+</head>
+
+<body data-sayfa="yonetici">
+
+    <header>
+        <div class="kapsayici ust">
+            <strong>🍽 Yemekhane Otomasyonu</strong>
+
+            <span id="oturumBilgi"></span>
+
+            <button id="cikis" class="dugme ikincil" hidden>
+                Çıkış
+            </button>
+        </div>
+    </header>
+
+    <nav class="kapsayici" aria-label="Ana menü">
+        <a href="/index.html">Giriş</a>
+        <a href="/gunluk-menu.html">Günlük Menü</a>
+        <a href="/haftalik-menu.html">Haftalık Menü ve Rezervasyon</a>
+        <a href="/rezervasyonlar.html">Rezervasyonlarım</a>
+        <a href="/bakiye.html">Bakiye İşlemleri</a>
+        <a href="/degerlendirme.html">Değerlendirme</a>
+        <a href="/yonetici.html" data-yonetici>Yönetici Paneli</a>
+    </nav>
+
+    <main class="kapsayici">
+
+        <h1>Yönetici Paneli</h1>
+
+        <p id="bildirim" role="status" aria-live="polite"></p>
+
+        <!-- YENİ MENÜ EKLEME FORMU -->
+        <h2 data-admin-form>Yeni Menü Ekle</h2>
+
+        <form id="ekleForm">
+
+            <label>
+                Yemekhane ID
+                <input name="yemekhane_id" type="number" min="1" required>
+            </label>
+
+            <label>
+                Tarih
+                <input name="tarih" type="date" required>
+            </label>
+
+            <label>
+                Öğün ID
+                <input name="ogun_id" type="number" min="1" required>
+            </label>
+
+            <label>
+                Öğrenci fiyatı
+                <input name="ogrenci_fiyati" type="number" step="0.01" min="0.01" required>
+            </label>
+
+            <label>
+                Personel fiyatı
+                <input name="personel_fiyati" type="number" step="0.01" min="0.01" required>
+            </label>
+
+            <label>
+                Yemek ID'leri (virgülle)
+                <input name="yemek_idleri" placeholder="1,9,10" required>
+            </label>
+
+            <button class="dugme">Menü Ekle</button>
+
+        </form>
+
+        <!-- MENÜ DÜZENLEME FORMU -->
+        <h2 data-admin-form>Menü Düzenle</h2>
+
+        <form id="duzenleForm">
+
+            <label>
+                Menü ID
+                <input name="menu_id" type="number" min="1" required>
+            </label>
+
+            <label>
+                Öğrenci fiyatı
+                <input name="ogrenci_fiyati" type="number" step="0.01" min="0.01" required>
+            </label>
+
+            <label>
+                Personel fiyatı
+                <input name="personel_fiyati" type="number" step="0.01" min="0.01" required>
+            </label>
+
+            <label>
+                Yemek ID'leri (virgülle)
+                <input name="yemek_idleri" placeholder="1,9,10" required>
+            </label>
+
+            <button class="dugme">Menüyü Düzenle</button>
+
+        </form>
+
+        <!-- MENÜ LİSTESİ -->
+        <div id="icerik"></div>
+
+    </main>
+
+    <footer class="kapsayici">
+        Yemekhane Otomasyonu · Web Teknolojileri
+    </footer>
+
+</body>
+
+</html>
