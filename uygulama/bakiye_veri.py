@@ -30,7 +30,7 @@ def bakiye_yukle(kullanici_id, tutar):
         db.close()
 
 def bakiye_bilgilerini_getir(kullanici_id):
-    db = baglanti("okuma")
+    db = baglanti("yazma")
     imlec = None
 
     try:
