@@ -20,12 +20,16 @@ def rezervasyon_olustur():
 
     veri = request.get_json(silent=True) or {}
     menu_id = veri.get("menu_id")
+    porsiyon = veri.get("porsiyon", "tam")
 
     if type(menu_id) is not int or menu_id <= 0:
         return jsonify({"hata": "Geçerli bir menü numarası giriniz."}), 400
 
+    if porsiyon not in ("tam", "yarim"):
+        return jsonify({"hata": "Geçersiz porsiyon seçimi."}), 400
+
     try:
-        sonuc = rezervasyon_yap(kullanici["id"], menu_id)
+        sonuc = rezervasyon_yap(kullanici["id"], menu_id, porsiyon)
 
         if sonuc is None:
             return jsonify({"hata": "Rezervasyon sonucu alınamadı."}), 500
@@ -65,6 +69,7 @@ def rezervasyonlari_listele():
             "menu_id": satir["menu_id"],
             "durum": satir["durum"],
             "ucret": float(satir["ucret"]),
+            "porsiyon": satir["porsiyon"],
             "olusturma": str(satir["olusturma"]),
             "kullanma_zamani": str(satir["kullanma_zamani"]) if satir["kullanma_zamani"] else None,
             "iptal_zamani": str(satir["iptal_zamani"]) if satir["iptal_zamani"] else None,

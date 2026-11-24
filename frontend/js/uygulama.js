@@ -13,12 +13,48 @@ function tarihAyarla(){if($('#tarih')){const d=new Date();$('#tarih').value=`${d
 function tarihSaat(s){if(!s)return null;const d=new Date(String(s).replace(' ','T'));return Number.isNaN(d.getTime())?null:d}
 function secenekleriDoldur(select,items){if(!select)return;const v=select.value;select.replaceChildren(new Option('Tümü',''));items.forEach(([id,ad])=>select.add(new Option(ad,String(id))));select.value=v}
 let sonMenuler=[];
-function menuKart(m,rez=false){const c=el('article',undefined,'kart');ekle(c,'h2',`${m.yemekhane} · ${m.ogun}`);ekle(c,'p',m.tarih);const u=kullanici();const fiyat=u?.rol==='personel'?m.personel_fiyati:m.ogrenci_fiyati;ekle(c,'p',`${u?.rol==='personel'?'Personel fiyatınız':u?.rol==='ogrenci'?'Öğrenci fiyatınız':'Öğrenci fiyatı'}: ${fiyat} TL · Öğrenci: ${m.ogrenci_fiyati} TL · Personel: ${m.personel_fiyati} TL`);ekle(c,'p',`Toplam kalori: ${m.toplam_kalori} kcal`);const ul=ekle(c,'ul');(m.yemekler||[]).forEach(y=>{const li=ekle(ul,'li');ekle(li,'strong',y.ad);ekle(li,'span',` · ${y.kategori||'Yemek'} · ${y.kalori} kcal${y.vejetaryen?' · Vejetaryen':''}`);if(y.alerjenler)ekle(li,'span',' · Alerjenler: '+y.alerjenler,'alerjen');});ekle(c,'p',`Rezervasyon sonu: ${m.rezervasyon_son}`);
-if(rez){const dol=ekle(c,'p','Boş yer bilgisi yükleniyor...');const b=ekle(c,'button',`Rezervasyon Yap (${fiyat} TL)`,'dugme');b.disabled=true;const son=tarihSaat(m.rezervasyon_son);if(!son||son<=new Date()){b.disabled=true;b.textContent='Rezervasyon süresi doldu'}if(!token()){b.disabled=true;b.textContent='Rezervasyon için giriş yapın'}if(u?.rol==='yonetici'){b.disabled=true;b.textContent='Yönetici rezervasyon yapamaz'};
-api(`/menuler/${m.menu_id}/doluluk`).then(d=>{dol.textContent=`Boş yer: ${d.bos_yer}/${d.kapasite} · Doluluk: %${d.doluluk_yuzde}`;if(d.bos_yer<=0){b.disabled=true;b.textContent='Kontenjan dolu'}else{const s=tarihSaat(d.rezervasyon_son);if(!s||s<=new Date()){b.disabled=true;b.textContent='Rezervasyon süresi doldu'}else if(token()&&u?.rol!=='yonetici'){b.disabled=false;b.textContent=`Rezervasyon Yap (${fiyat} TL)`}}}).catch(e=>{b.disabled=true;b.textContent='Rezervasyon şu anda kullanılamıyor';dol.textContent='Doluluk bilgisi alınamadı: '+e.message});
-b.onclick=()=>calistir(async()=>{if(!girisGerekli()||b.disabled)return;b.disabled=true;try{const d=await api('/rezervasyon/yap','POST',{menu_id:m.menu_id});bildirim(`Rezervasyon başarılı. Numara: ${d.rezervasyon.rezervasyon_id}. Kalan bakiye: ${d.rezervasyon.bakiye} TL`);b.textContent='Rezervasyon yapıldı'}catch(e){b.disabled=false;throw e}})}return c}
+let seciliAlerjenler=[];
+async function alerjenTercihleri(){
+    seciliAlerjenler=[];
+    if(!token())return;
+    const d=await api('/profil/alerjenler');
+    seciliAlerjenler=d.alerjenler.filter(a=>a.secili).map(a=>a.ad);
+}
+async function profilGetir(){
+    if(!girisGerekli())return;
+    const d=await api('/profil/alerjenler');
+    const alan=$('#alerjenListesi');
+    alan.replaceChildren();
+    for(const a of d.alerjenler){
+        const satir=ekle(alan,'p');
+        const etiket=ekle(satir,'label');
+        const kutu=ekle(etiket,'input');
+        kutu.type='checkbox';
+        kutu.value=a.id;
+        kutu.checked=Boolean(a.secili);
+        etiket.append(' '+a.ad);
+    }
+    $('#alerjenForm button').disabled=false;
+}
+
+function menuKart(m,rez=false){const c=el('article',undefined,'kart');ekle(c,'h2',`${m.yemekhane} · ${m.ogun}`);ekle(c,'p',m.tarih);const u=kullanici();const fiyat=u?.rol==='personel'?m.personel_fiyati:m.ogrenci_fiyati;ekle(c,'p',`${u?.rol==='personel'?'Personel fiyatınız':u?.rol==='ogrenci'?'Öğrenci fiyatınız':'Öğrenci fiyatı'}: ${fiyat} TL · Öğrenci: ${m.ogrenci_fiyati} TL · Personel: ${m.personel_fiyati} TL`);ekle(c,'p',`Toplam kalori: ${m.toplam_kalori} kcal`);const ul=ekle(c,'ul');(m.yemekler||[]).forEach(y=>{const li=ekle(ul,'li');ekle(li,'strong',y.ad);ekle(li,'span',` · ${y.kategori||'Yemek'} · ${y.kalori} kcal${y.vejetaryen?' · Vejetaryen':''}`);if(y.alerjenler){
+    ekle(li,'span',' · Alerjenler: '+y.alerjenler,'alerjen');
+    const eslesen=y.alerjenler.split(',').map(a=>a.trim()).filter(a=>seciliAlerjenler.includes(a));
+    if(eslesen.length)ekle(li,'strong',' · ⚠ Alerjen uyarısı: '+eslesen.join(', '),'uyari');
+}});ekle(c,'p',`Rezervasyon sonu: ${m.rezervasyon_son}`);
+if(rez){
+const porsiyon=el('select');
+porsiyon.add(new Option('Tam porsiyon','tam'));
+if([2,3].includes(Number(m.ogun_id)))porsiyon.add(new Option('Yarım porsiyon','yarim'));
+const etiket=ekle(c,'label','Porsiyon: ');etiket.append(porsiyon);
+const secilenFiyat=()=> (Number(fiyat)*(porsiyon.value==='yarim'?0.60:1)).toFixed(2);
+const fiyatBilgi=ekle(c,'p','Seçilen fiyat: '+secilenFiyat()+' TL');
+const dol=ekle(c,'p','Boş yer bilgisi yükleniyor...');const b=ekle(c,'button',`Rezervasyon Yap (${secilenFiyat()} TL)`,'dugme');b.disabled=true;const son=tarihSaat(m.rezervasyon_son);if(!son||son<=new Date()){b.disabled=true;b.textContent='Rezervasyon süresi doldu'}if(!token()){b.disabled=true;b.textContent='Rezervasyon için giriş yapın'}if(u?.rol==='yonetici'){b.disabled=true;b.textContent='Yönetici rezervasyon yapamaz'};
+api(`/menuler/${m.menu_id}/doluluk`).then(d=>{dol.textContent=`Boş yer: ${d.bos_yer}/${d.kapasite} · Doluluk: %${d.doluluk_yuzde}`;if(d.bos_yer<=0){b.disabled=true;b.textContent='Kontenjan dolu'}else{const s=tarihSaat(d.rezervasyon_son);if(!s||s<=new Date()){b.disabled=true;b.textContent='Rezervasyon süresi doldu'}else if(token()&&u?.rol!=='yonetici'){b.disabled=false;b.textContent=`Rezervasyon Yap (${secilenFiyat()} TL)`}}}).catch(e=>{b.disabled=true;b.textContent='Rezervasyon şu anda kullanılamıyor';dol.textContent='Doluluk bilgisi alınamadı: '+e.message});
+porsiyon.onchange=()=>{fiyatBilgi.textContent='Seçilen fiyat: '+secilenFiyat()+' TL';if(!b.disabled)b.textContent=`Rezervasyon Yap (${secilenFiyat()} TL)`};
+b.onclick=()=>calistir(async()=>{if(!girisGerekli()||b.disabled)return;b.disabled=true;try{const d=await api('/rezervasyon/yap','POST',{menu_id:m.menu_id,porsiyon:porsiyon.value});bildirim(`Rezervasyon başarılı. Numara: ${d.rezervasyon.rezervasyon_id}. Kalan bakiye: ${d.rezervasyon.bakiye} TL`);b.textContent='Rezervasyon yapıldı';porsiyon.disabled=true}catch(e){b.disabled=false;throw e}})}return c}
 function filtrele(){const alan=temiz();const y=$('#yemekhaneFiltre')?.value||'',o=$('#ogunFiltre')?.value||'';const liste=sonMenuler.filter(m=>(!y||String(m.yemekhane_id)===y)&&(!o||String(m.ogun_id)===o));if(!liste.length)ekle(alan,'p','Bu filtrelerde menü bulunamadı.');liste.forEach(m=>alan.append(menuKart(m,sayfa==='haftalik')));bildirim(`${liste.length} menü listelendi.`)}
-async function menuler(haftalik){const t=$('#tarih').value;if(!t)throw Error('Tarih seçiniz.');const d=await api(`/menuler/${haftalik?'haftalik':'gunluk'}?tarih=${encodeURIComponent(t)}`);sonMenuler=d.menuler||[];const unique=(key,label)=>[...new Map(sonMenuler.map(m=>[m[key],[m[key],m[label]]])).values()];secenekleriDoldur($('#yemekhaneFiltre'),unique('yemekhane_id','yemekhane'));secenekleriDoldur($('#ogunFiltre'),unique('ogun_id','ogun'));filtrele()}
+async function menuler(haftalik){await alerjenTercihleri();const t=$('#tarih').value;if(!t)throw Error('Tarih seçiniz.');const d=await api(`/menuler/${haftalik?'haftalik':'gunluk'}?tarih=${encodeURIComponent(t)}`);sonMenuler=d.menuler||[];const unique=(key,label)=>[...new Map(sonMenuler.map(m=>[m[key],[m[key],m[label]]])).values()];secenekleriDoldur($('#yemekhaneFiltre'),unique('yemekhane_id','yemekhane'));secenekleriDoldur($('#ogunFiltre'),unique('ogun_id','ogun'));filtrele()}
 async function rezervasyonlari(){
  if(!girisGerekli())return;
  const d=await api('/rezervasyonlar');const alan=temiz();
@@ -27,7 +63,7 @@ async function rezervasyonlari(){
  for(const r of d.rezervasyonlar){
   const c=ekle(alan,'article',undefined,'kart');
   ekle(c,'h2',`${r.yemekhane} · ${r.ogun}`);
-  ekle(c,'p',`${r.tarih} · ${r.ucret} TL · Durum: ${r.durum}`);
+  ekle(c,'p',`${r.tarih} · ${r.ucret} TL · ${r.porsiyon==='yarim'?'Yarım':'Tam'} porsiyon · Durum: ${r.durum}`);
   ekle(c,'p',`Rezervasyon #${r.id} · Menü #${r.menu_id}`);
   if(r.durum!=='aktif')continue;
   const b=ekle(c,'button','İptal koşulları kontrol ediliyor...','dugme');b.disabled=true;
@@ -69,3 +105,19 @@ if(sayfa==='rezervasyonlar'){$('#rezGetir').onclick=()=>calistir(rezervasyonlari
 if(sayfa==='bakiye'){$('#bakiyeForm').onsubmit=e=>{e.preventDefault();calistir(async()=>{const tutar=Number(new FormData(e.target).get('tutar'));if(!Number.isFinite(tutar)||tutar<=0)throw Error('Geçerli bir tutar giriniz.');await api('/bakiye/yukle','POST',{tutar});e.target.reset();await bakiyeGetir();bildirim('Bakiye yüklendi.')})};calistir(bakiyeGetir)}
 if(sayfa==='degerlendirme'){$('#puanForm').onsubmit=e=>{e.preventDefault();calistir(async()=>{const d=formVeri(e.target);await api('/degerlendirme/ekle','POST',{menu_id:Number(d.menu_id),puan:Number(d.puan),yorum:d.yorum});e.target.reset();await degerlendirmeleriGetir();bildirim('Değerlendirme kaydedildi.')})};calistir(degerlendirmeleriGetir)}
 if(sayfa==='yonetici'){$('#ekleForm').onsubmit=e=>{e.preventDefault();calistir(async()=>{const d=await api('/yonetici/menu/ekle','POST',adminVeri(e.target));e.target.reset();await yoneticiGetir();bildirim(`Menü eklendi. ID: ${d.menu_id}`)})};$('#duzenleForm').onsubmit=e=>{e.preventDefault();calistir(async()=>{await api('/yonetici/menu/duzenle','PUT',adminVeri(e.target,true));await yoneticiGetir();bildirim('Menü güncellendi.')})};calistir(yoneticiGetir)}
+
+if(!document.querySelector('nav a[href="/profil.html"]')){
+    const nav=document.querySelector('nav');
+    if(nav){const a=el('a','Profilim');a.href='/profil.html';nav.insertBefore(a,nav.querySelector('[data-yonetici]'));}
+}
+if(sayfa==='profil'){
+    $('#alerjenForm').onsubmit=e=>{
+        e.preventDefault();
+        calistir(async()=>{
+            const alerjenler=[...document.querySelectorAll('#alerjenListesi input:checked')].map(k=>Number(k.value));
+            await api('/profil/alerjenler','PUT',{alerjenler});
+            bildirim('Alerjen tercihleriniz kaydedildi.');
+        });
+    };
+    calistir(profilGetir);
+}

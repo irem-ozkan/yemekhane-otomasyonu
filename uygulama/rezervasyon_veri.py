@@ -1,7 +1,7 @@
 from veritabani import baglanti
 
 
-def rezervasyon_yap(kullanici_id, menu_id):
+def rezervasyon_yap(kullanici_id, menu_id, porsiyon):
     db = baglanti("yazma")
     imlec = None
 
@@ -10,16 +10,18 @@ def rezervasyon_yap(kullanici_id, menu_id):
 
         imlec.callproc(
             "sp_rezervasyon_yap",
-            [kullanici_id, menu_id]
+            [kullanici_id, menu_id, porsiyon]
         )
 
         for sonuc in imlec.stored_results():
             satir = sonuc.fetchone()
+
             if satir is not None:
                 return {
                     "rezervasyon_id": satir["rezervasyon_id"],
                     "ucret": float(satir["ucret"]),
-                    "bakiye": float(satir["bakiye"])
+                    "bakiye": float(satir["bakiye"]),
+                    "porsiyon": satir["porsiyon"]
                 }
 
         return None
@@ -28,6 +30,7 @@ def rezervasyon_yap(kullanici_id, menu_id):
         if imlec is not None:
             imlec.close()
         db.close()
+
 
 def rezervasyonlari_getir(kullanici_id):
     db = baglanti("okuma")
@@ -42,6 +45,7 @@ def rezervasyonlari_getir(kullanici_id):
                 r.menu_id,
                 r.durum,
                 r.ucret,
+                r.porsiyon,
                 r.olusturma,
                 r.kullanma_zamani,
                 r.iptal_zamani,
@@ -62,6 +66,7 @@ def rezervasyonlari_getir(kullanici_id):
         if imlec is not None:
             imlec.close()
         db.close()
+
 
 def rezervasyon_iptal(kullanici_id, rezervasyon_id):
     db = baglanti("yazma")
