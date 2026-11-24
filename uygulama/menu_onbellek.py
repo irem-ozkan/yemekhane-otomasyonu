@@ -24,7 +24,9 @@ def menu_kaydet(yemekhane_id, tarih, ogun_id, menu):
 
 
 def menu_getir(yemekhane_id, tarih, ogun_id):
-    veri = redis_db.get(menu_anahtari(yemekhane_id, tarih, ogun_id))
+    veri = redis_db.get(
+        menu_anahtari(yemekhane_id, tarih, ogun_id)
+    )
 
     if veri is None:
         return None
@@ -33,61 +35,45 @@ def menu_getir(yemekhane_id, tarih, ogun_id):
 
 
 def menu_sil(yemekhane_id, tarih, ogun_id):
-    redis_db.delete(menu_anahtari(yemekhane_id, tarih, ogun_id))
+    redis_db.delete(
+        menu_anahtari(yemekhane_id, tarih, ogun_id)
+    )
 
 
 def gunluk_menu_getir(tarih):
-    veri = redis_db.get("gunluk:" + str(tarih))
-
-    if veri is None:
+    if kalan_sure(tarih) <= 0:
         return None
 
-    return json.loads(veri)
+    menuler = []
+
+    for yemekhane_id in (1, 2):
+        for ogun_id in (1, 2, 3):
+            menu = menu_getir(yemekhane_id, tarih, ogun_id)
+
+            if menu is None:
+                return None
+
+            menuler.append(menu)
+
+    return menuler
 
 
 def gunluk_menu_kaydet(tarih, menuler):
-    sure = kalan_sure(tarih)
-
-    if sure > 0:
-        redis_db.setex(
-            "gunluk:" + str(tarih),
-            sure,
-            json.dumps(menuler, ensure_ascii=False)
+    for menu in menuler:
+        menu_kaydet(
+            menu["yemekhane_id"],
+            menu["tarih"],
+            menu["ogun_id"],
+            menu
         )
-
-
-def gunluk_menu_sil(tarih):
-    redis_db.delete("gunluk:" + str(tarih))
-
-
-def haftalik_menu_getir(baslangic):
-    veri = redis_db.get("haftalik:" + str(baslangic))
-
-    if veri is None:
-        return None
-
-    return json.loads(veri)
-
-
-def haftalik_menu_kaydet(baslangic, bitis, menuler):
-    sure = kalan_sure(bitis)
-
-    if sure > 0:
-        redis_db.setex(
-            "haftalik:" + str(baslangic),
-            sure,
-            json.dumps(menuler, ensure_ascii=False)
-        )
-
-
-def haftalik_menu_sil(tarih):
-    secilen_tarih = datetime.fromisoformat(str(tarih)).date()
-    pazartesi = secilen_tarih - timedelta(days=secilen_tarih.weekday())
-
-    redis_db.delete("haftalik:" + pazartesi.isoformat())
 
 
 def menu_onbellek_temizle(yemekhane_id, tarih, ogun_id):
     menu_sil(yemekhane_id, tarih, ogun_id)
-    gunluk_menu_sil(tarih)
-    haftalik_menu_sil(tarih)
+
+    redis_db.delete("gunluk:" + str(tarih))
+
+    secilen_tarih = datetime.fromisoformat(str(tarih)).date()
+    pazartesi = secilen_tarih - timedelta(days=secilen_tarih.weekday())
+
+    redis_db.delete("haftalik:" + pazartesi.isoformat())

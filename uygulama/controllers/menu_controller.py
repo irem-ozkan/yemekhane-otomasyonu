@@ -3,16 +3,12 @@ from flask import Blueprint, jsonify, request
 
 from menu_veri import (
     gunluk_menuleri_getir,
-    haftalik_menuleri_getir,
     menu_doluluk_getir
 )
 
 from menu_onbellek import (
-    menu_kaydet,
     gunluk_menu_getir,
-    gunluk_menu_kaydet,
-    haftalik_menu_getir,
-    haftalik_menu_kaydet
+    gunluk_menu_kaydet
 )
 
 
@@ -54,37 +50,37 @@ def menuleri_hazirla(satirlar):
     return list(menuler.values())
 
 
+def gunun_menuleri(tarih):
+    kayitli = gunluk_menu_getir(tarih)
+
+    if kayitli is not None:
+        print(f"GUNLUK MENU: REDIS - {tarih}", flush=True)
+        return kayitli
+
+    print(f"GUNLUK MENU: MYSQL - {tarih}", flush=True)
+
+    satirlar = gunluk_menuleri_getir(tarih)
+    menuler = menuleri_hazirla(satirlar)
+
+    gunluk_menu_kaydet(tarih, menuler)
+
+    return menuler
+
+
 @menu_bp.route("/api/menuler/gunluk", methods=["GET"])
 def gunluk_menuler():
     tarih = request.args.get("tarih", date.today().isoformat())
 
     try:
-        date.fromisoformat(tarih)
+        tarih = date.fromisoformat(tarih).isoformat()
     except ValueError:
-        return jsonify({"hata": "Tarih YYYY-AA-GG biçiminde olmalıdır."}), 400
+        return jsonify({
+            "hata": "Tarih YYYY-AA-GG biçiminde olmalıdır."
+        }), 400
 
-    kayitli = gunluk_menu_getir(tarih)
-
-    if kayitli is not None:
-        print("GUNLUK MENU: REDIS", flush=True)
-        return jsonify({"menuler": kayitli})
-
-    print("GUNLUK MENU: MYSQL", flush=True)
-
-    satirlar = gunluk_menuleri_getir(tarih)
-    menuler = menuleri_hazirla(satirlar)
-
-    for menu in menuler:
-        menu_kaydet(
-            menu["yemekhane_id"],
-            menu["tarih"],
-            menu["ogun_id"],
-            menu
-        )
-
-    gunluk_menu_kaydet(tarih, menuler)
-
-    return jsonify({"menuler": menuler})
+    return jsonify({
+        "menuler": gunun_menuleri(tarih)
+    })
 
 
 @menu_bp.route("/api/menuler/haftalik", methods=["GET"])
@@ -94,35 +90,21 @@ def haftalik_menuler():
     try:
         secilen_tarih = date.fromisoformat(tarih)
     except ValueError:
-        return jsonify({"hata": "Tarih YYYY-AA-GG biçiminde olmalıdır."}), 400
+        return jsonify({
+            "hata": "Tarih YYYY-AA-GG biçiminde olmalıdır."
+        }), 400
 
-    baslangic = secilen_tarih - timedelta(days=secilen_tarih.weekday())
+    baslangic = secilen_tarih - timedelta(
+        days=secilen_tarih.weekday()
+    )
+
     bitis = baslangic + timedelta(days=6)
 
-    kayitli = haftalik_menu_getir(baslangic)
+    menuler = []
 
-    if kayitli is not None:
-        print("HAFTALIK MENU: REDIS", flush=True)
-        return jsonify({
-            "baslangic": baslangic.isoformat(),
-            "bitis": bitis.isoformat(),
-            "menuler": kayitli
-        })
-
-    print("HAFTALIK MENU: MYSQL", flush=True)
-
-    satirlar = haftalik_menuleri_getir(baslangic, bitis)
-    menuler = menuleri_hazirla(satirlar)
-
-    for menu in menuler:
-        menu_kaydet(
-            menu["yemekhane_id"],
-            menu["tarih"],
-            menu["ogun_id"],
-            menu
-        )
-
-    haftalik_menu_kaydet(baslangic, bitis, menuler)
+    for i in range(7):
+        gun = baslangic + timedelta(days=i)
+        menuler.extend(gunun_menuleri(gun.isoformat()))
 
     return jsonify({
         "baslangic": baslangic.isoformat(),
@@ -136,7 +118,9 @@ def menu_doluluk(menu_id):
     bilgi = menu_doluluk_getir(menu_id)
 
     if bilgi is None:
-        return jsonify({"hata": "Menü bulunamadı."}), 404
+        return jsonify({
+            "hata": "Menü bulunamadı."
+        }), 404
 
     return jsonify({
         "menu_id": bilgi["menu_id"],
