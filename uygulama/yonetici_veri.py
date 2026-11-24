@@ -1,4 +1,5 @@
 from veritabani import baglanti
+from menu_onbellek import menu_onbellek_temizle
 
 
 def yonetici_menuleri_getir():
@@ -35,9 +36,12 @@ def yonetici_menuleri_getir():
     finally:
         if imlec is not None:
             imlec.close()
-        db.close() 
+        db.close()
 
-def yonetici_menu_ekle(yemekhane_id, tarih, ogun_id, ogrenci_fiyati, personel_fiyati, yemek_idleri):
+
+def yonetici_menu_ekle(yemekhane_id, tarih, ogun_id,
+                       ogrenci_fiyati, personel_fiyati, yemek_idleri):
+
     db = baglanti("yazma")
     db.autocommit = False
     imlec = None
@@ -64,7 +68,6 @@ def yonetici_menu_ekle(yemekhane_id, tarih, ogun_id, ogrenci_fiyati, personel_fi
             """, (menu_id, yemek_id))
 
         db.commit()
-        return menu_id
 
     except Exception:
         db.rollback()
@@ -73,9 +76,16 @@ def yonetici_menu_ekle(yemekhane_id, tarih, ogun_id, ogrenci_fiyati, personel_fi
     finally:
         if imlec is not None:
             imlec.close()
-        db.close() 
+        db.close()
 
-def yonetici_menu_duzenle(menu_id, ogrenci_fiyati, personel_fiyati, yemek_idleri):
+    menu_onbellek_temizle(yemekhane_id, tarih, ogun_id)
+
+    return menu_id
+
+
+def yonetici_menu_duzenle(menu_id, ogrenci_fiyati,
+                          personel_fiyati, yemek_idleri):
+
     db = baglanti("yazma")
     db.autocommit = False
     imlec = None
@@ -83,15 +93,21 @@ def yonetici_menu_duzenle(menu_id, ogrenci_fiyati, personel_fiyati, yemek_idleri
     try:
         db.start_transaction()
         imlec = db.cursor()
+
         imlec.execute("""
-            SELECT id FROM menuler
+            SELECT yemekhane_id, tarih, ogun_id
+            FROM menuler
             WHERE id = %s
             FOR UPDATE
         """, (menu_id,))
 
-        if imlec.fetchone() is None:
+        bilgi = imlec.fetchone()
+
+        if bilgi is None:
             db.rollback()
             return False
+
+        yemekhane_id, tarih, ogun_id = bilgi
 
         imlec.execute("""
             UPDATE menuler
@@ -100,7 +116,6 @@ def yonetici_menu_duzenle(menu_id, ogrenci_fiyati, personel_fiyati, yemek_idleri
             WHERE id = %s
         """, (ogrenci_fiyati, personel_fiyati, menu_id))
 
-       
         imlec.execute("""
             DELETE FROM menu_yemekleri
             WHERE menu_id = %s
@@ -113,7 +128,6 @@ def yonetici_menu_duzenle(menu_id, ogrenci_fiyati, personel_fiyati, yemek_idleri
             """, (menu_id, yemek_id))
 
         db.commit()
-        return True
 
     except Exception:
         db.rollback()
@@ -122,4 +136,8 @@ def yonetici_menu_duzenle(menu_id, ogrenci_fiyati, personel_fiyati, yemek_idleri
     finally:
         if imlec is not None:
             imlec.close()
-        db.close() 
+        db.close()
+
+    menu_onbellek_temizle(yemekhane_id, tarih, ogun_id)
+
+    return True
