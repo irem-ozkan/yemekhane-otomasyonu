@@ -1,10 +1,10 @@
 :root {
-    --zemin: #eef3f0;
+    --zemin: #f7f2e9;
     --yuzey: #fff;
-    --metin: #1e2c30;
-    --ana: #176b58;
-    --ana-koyu: #104d40;
-    --cizgi: #cdd9d3;
+    --metin: #292929;
+    --ana: #800020;
+    --ana-koyu: #590016;
+    --cizgi: #e5d8ce;
     --vurgu: #e6a932;
     --hata: #aa2820;
 }
@@ -28,7 +28,7 @@ body {
 /* ÜST BAŞLIK */
 
 header {
-    background: #143f37;
+    background: #800020;
     color: #fff;
 }
 
@@ -61,7 +61,7 @@ nav a {
 }
 
 nav a:hover {
-    background: #dceee7;
+    background: #f4e3e7;
 }
 
 /* ANA İÇERİK */
@@ -88,7 +88,7 @@ form,
     border: 1px solid var(--cizgi);
     border-radius: 12px;
     margin: 1rem 0;
-    box-shadow: 0 2px 9px #17382a0a;
+    box-shadow: 0 2px 9px #5900160a;
 }
 
 form {
@@ -108,7 +108,7 @@ textarea {
     width: 100%;
     font: inherit;
     padding: .7rem;
-    border: 1px solid #a7bcb2;
+    border: 1px solid #d8c6c1;
     border-radius: 7px;
     margin-top: .3rem;
 }
@@ -136,12 +136,12 @@ textarea {
 }
 
 .dugme:disabled {
-    background: #a8b4ae;
+    background: #b7a9a9;
     cursor: not-allowed;
 }
 
 .ikincil {
-    background: #476b60;
+    background: #a63d50;
 }
 
 /* KART LİSTELERİ */
@@ -160,7 +160,7 @@ textarea {
 
 .etiket {
     display: inline-block;
-    background: #e4efe8;
+    background: #f4e3e7;
     padding: .15rem .5rem;
     border-radius: 5px;
     margin: .15rem;
@@ -203,7 +203,7 @@ td {
 
 footer {
     padding: 1.5rem 0;
-    color: #5c7169;
+    color: #78666a;
 }
 
 button {
@@ -384,8 +384,8 @@ nav a[hidden] {
     gap: 10px;
     margin: 0;
     padding: 12px;
-    background: #eef3f0;
-    border: 1px solid #cdd9d3;
+    background: #f7f2e9;
+    border: 1px solid #e5d8ce;
     border-radius: 8px;
     cursor: pointer;
 }
@@ -396,16 +396,76 @@ nav a[hidden] {
     margin: 0;
     padding: 0;
     flex-shrink: 0;
-    accent-color: #176b58;
+    accent-color: #800020;
     cursor: pointer;
 }
 
 #alerjenListesi label:hover {
-    background: #dceee7;
+    background: #f4e3e7;
 }
 
 @media (max-width: 600px) {
     #alerjenListesi {
         grid-template-columns: 1fr;
     }
+}
+/* Bordo ve krem arayüz */
+.kapsayici { width: min(calc(100% - 2rem), 1320px); }
+header { box-shadow: 0 3px 12px #59001620; }
+.ust strong { font-size: 1.25rem; letter-spacing: -.02em; }
+#oturumBilgi { margin-left: auto; font-size: .9rem; }
+nav.kapsayici { background: white; border: 1px solid var(--cizgi); border-radius: 14px; padding: .6rem; margin: 1.25rem auto; gap: .35rem; }
+nav a { border: 0; font-size: .9rem; font-weight: 600; flex: 1 1 auto; text-align: center; }
+body[data-sayfa="giris"] nav a[href="/index.html"],
+body[data-sayfa="gunluk"] nav a[href="/gunluk-menu.html"],
+body[data-sayfa="haftalik"] nav a[href="/haftalik-menu.html"],
+body[data-sayfa="rezervasyonlar"] nav a[href="/rezervasyonlar.html"],
+body[data-sayfa="bakiye"] nav a[href="/bakiye.html"],
+body[data-sayfa="degerlendirme"] nav a[href="/degerlendirme.html"],
+body[data-sayfa="profil"] nav a[href="/profil.html"],
+body[data-sayfa="yonetici"] nav a[href="/yonetici.html"] { background: var(--ana); color: white; }
+h1 { color: var(--ana-koyu); letter-spacing: -.035em; margin: 1.5rem 0; }
+h2 { color: var(--ana-koyu); font-size: 1.2rem; }
+form, .kart { border-radius: 16px; padding: 1.35rem; box-shadow: 0 5px 20px #5900160b; }
+.kartlar { gap: 1.2rem; margin-top: 1.2rem; }
+.kart { border-top: 4px solid var(--ana); }
+.kart h2 { margin: 0 0 .75rem; }
+.kart p { margin: .65rem 0; }
+.kart ul { list-style: none; padding: 0; margin: 1rem 0; }
+.kart li { border-bottom: 1px solid #eee5df; padding: .65rem 0; margin: 0; }
+.kart li:last-child { border-bottom: 0; }
+.kart li > span { font-size: .88rem; }
+.kart .dugme { width: 100%; }
+input, select, textarea { background: #fff; color: var(--metin); border-radius: 9px; }
+input:focus, select:focus, textarea:focus { outline: 2px solid #a63d50; outline-offset: 2px; }
+.dugme { border-radius: 10px; }
+.dugme:focus-visible, nav a:focus-visible { outline: 3px solid #a63d50; outline-offset: 3px; }
+.filtreler { background: white; border: 1px solid var(--cizgi); padding: 1rem; border-radius: 14px; }
+main > label { max-width: 420px; }
+#bildirim:empty, #bakiyeBilgi:empty { display: none; }
+#bakiyeBilgi { background: var(--ana); color: white; border-radius: 16px; padding: 1.5rem; margin: 1rem 0; }
+#bakiyeBilgi h2 { color: white; font-size: 1.7rem; margin: 0; }
+.tablo-kaydir { border: 1px solid var(--cizgi); border-radius: 14px; background: white; margin-top: 1rem; }
+th { background: var(--ana); color: white; white-space: nowrap; }
+tbody tr:nth-child(even) { background: #fcf8f3; }
+tbody tr:hover { background: #f4e3e7; }
+body[data-sayfa="giris"] main { max-width: 460px; }
+body[data-sayfa="giris"] h1 { text-align: center; }
+#girisForm .dugme { width: 100%; }
+#alerjenListesi label:has(input:checked) { background: #f4e3e7; border-color: var(--ana); color: var(--ana-koyu); }
+#alerjenListesi label { min-height: 52px; }
+footer { border-top: 1px solid var(--cizgi); font-size: .85rem; text-align: center; }
+@media (min-width: 760px) {
+    #ekleForm, #duzenleForm { max-width: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem 1rem; align-items: end; }
+    #ekleForm label, #duzenleForm label { margin: 0; }
+}
+@media (max-width: 600px) {
+    .kapsayici { width: calc(100% - 1rem); }
+    .ust { gap: .5rem; }
+    #oturumBilgi { margin-left: 0; }
+    nav.kapsayici { margin: .75rem auto; }
+    nav a { flex: 1 1 45%; font-size: .82rem; padding: .65rem .35rem; }
+    .kart, form { padding: 1rem; }
+    .filtreler { grid-template-columns: 1fr; }
+    h1 { font-size: 1.5rem; }
 }
