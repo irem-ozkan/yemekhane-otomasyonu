@@ -1,10 +1,11 @@
+import os
 import json
 import secrets
 import redis
 
 redis_db = redis.Redis(
-    host="redis",
-    port=6379,
+    host=os.environ["REDIS_HOST"],
+    port=int(os.environ["REDIS_PORT"]),
     decode_responses=True
 )
 

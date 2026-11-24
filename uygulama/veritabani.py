@@ -4,16 +4,16 @@ import mysql.connector
 
 def baglanti(tur="okuma"):
     if tur == "yazma":
-        sunucu = "mysql-primary"
+        sunucu = os.environ["DB_YAZMA_HOST"]
     else:
-        sunucu = "mysql-replica"
+        sunucu = os.environ["DB_OKUMA_HOST"]
 
     return mysql.connector.connect(
         host=sunucu,
-        port=3306,
-        user=os.getenv("DB_USER", "yemekhane_app"),
-        password=os.getenv("DB_PASSWORD", "Uyg_2026"),
-        database="yemekhane",
+        port=int(os.environ["DB_PORT"]),
+        user=os.environ["DB_KULLANICI"],
+        password=os.environ["DB_SIFRE"],
+        database=os.environ["DB_ADI"],
         charset="utf8mb4",
         autocommit=True
     )
